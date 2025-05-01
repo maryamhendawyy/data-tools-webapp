@@ -14,7 +14,7 @@ def load_data(path):
         st.error(f" File '{path}' not found.")
         return pd.DataFrame()
 
-# ----------------- Visualization Functions -----------------
+# ----------------- Visualization Functions ----------------
 def plot_top_companies(df):
     top_companies = df['company'].value_counts().head(10)
     fig, ax = plt.subplots()
@@ -24,7 +24,7 @@ def plot_top_companies(df):
     st.pyplot(fig)
 
 def plot_top_job_titles(df):
-    top_titles = df['title'].value_counts().head(10)
+    top_titles = df['job_title'].value_counts().head(10)
     fig, ax = plt.subplots()
     top_titles.plot(kind='bar', ax=ax, color='orange')
     ax.set_title("Top 10 Job Titles")
@@ -32,10 +32,10 @@ def plot_top_job_titles(df):
     st.pyplot(fig)
 
 def plot_wordcloud_skills(df):
-    if 'skills_list' not in df.columns:
-        st.warning(" 'skills_list' column not found.")
+    if 'skills' not in df.columns:
+        st.warning(" 'skills' column not found.")
         return
-    all_skills = df['skills_list'].explode().dropna().tolist()
+    all_skills = df['skills'].explode().dropna().tolist()
     skills_text = ' '.join(all_skills)
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(skills_text)
     fig, ax = plt.subplots()
@@ -43,13 +43,13 @@ def plot_wordcloud_skills(df):
     ax.axis('off')
     st.pyplot(fig)
 
-def plot_jobs_by_location(df):
-    if 'location' not in df.columns:
-        st.warning(" 'location' column not found in data.")
+def plot_jobs_by_city(df):
+    if 'city' not in df.columns:
+        st.warning(" 'city' column not found in data.")
         return
-    top_locations = df['location'].value_counts().head(10)
+    top_cities = df['city'].value_counts().head(10)
     fig, ax = plt.subplots()
-    sns.barplot(x=top_locations.values, y=top_locations.index, ax=ax, palette='viridis')
+    sns.barplot(x=top_cities.values, y=top_cities.index, ax=ax, palette='viridis')
     ax.set_title("Top Job Locations")
     st.pyplot(fig)
 
@@ -69,7 +69,7 @@ def main():
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Jobs", len(df))
     col2.metric("Companies", df['company'].nunique())
-    col3.metric("Job Titles", df['title'].nunique())
+    col3.metric("Job Titles", df['job_title'].nunique())
 
     # Plots
     st.subheader(" Top Hiring Companies")
@@ -79,7 +79,7 @@ def main():
     plot_top_job_titles(df)
 
     st.subheader(" Top Job Locations")
-    plot_jobs_by_location(df)
+    plot_jobs_by_city(df)
 
     st.subheader(" Most Common Skills")
     plot_wordcloud_skills(df)
