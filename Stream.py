@@ -6,6 +6,8 @@ import seaborn as sns
 from streamlit_extras.card import card
 import base64
 import plotly.express as px
+import difflib
+
 
 
 @st.cache_data
@@ -219,28 +221,47 @@ def main():
         )
 
     if search_query:
-        filtered_df = df[
-            df['job_title'].str.contains(search_query, case=False, na=False) |
-            df['company'].str.contains(search_query, case=False, na=False) |
-            df['city'].str.contains(search_query, case=False, na=False)
-        ]
-        st.success(f"Found {len(filtered_df)} results for: **{search_query}**")
+        matches = []
+
+        for column in ['job_title', 'company', 'city']:
+            values = df[column].dropna().unique().astype(str)
+            close = difflib.get_close_matches(search_query, values, n=5, cutoff=0.6)
+            for match in close:
+                matches.append((match, column))
+
+        if matches:
+            suggestions = [m[0] for m in matches]
+            suggestion = st.selectbox("Did you mean one of these?", options=suggestions)
+            st.info(f"Showing results for: **{suggestion}**")
+
+            filtered_df = df[
+                df['job_title'].str.contains(suggestion, case=False, na=False) |
+                df['company'].str.contains(suggestion, case=False, na=False) |
+                df['city'].str.contains(suggestion, case=False, na=False)
+            ]
+        else:
+            st.warning("No close matches found. Showing zero results.")
+            filtered_df = df[[]]  # فارغ
+
         st.dataframe(filtered_df, use_container_width=True)
     else:
         filtered_df = df
+
         
     
-    st.markdown("<div class='yellow-box'>🧮 Filter by Columns</div>", unsafe_allow_html=True)
-    filter_cols = st.multiselect("Select columns to filter by:", options=[col for col in df.columns if df[col].nunique() < 50])
+        st.markdown("<div class='yellow-box'>🧮 Filter by Columns</div>", unsafe_allow_html=True)
+    filter_col = st.selectbox("Select a column to explore:", options=[col for col in df.columns if df[col].nunique() < 50])
 
-    for col in filter_cols:
-        unique_vals = df[col].dropna().unique()
-        selected_vals = st.multiselect(f"Filter '{col}' by:", options=sorted(unique_vals))
-        if selected_vals:
-            filtered_df = filtered_df[filtered_df[col].isin(selected_vals)]
+    if filter_col:
+        unique_vals = df[filter_col].dropna().unique()
+        st.markdown(f"<div class='yellow-box'>📌 Available values in <strong>{filter_col}</strong></div>", unsafe_allow_html=True)
+        st.dataframe(df[[filter_col]].dropna().drop_duplicates().sort_values(by=filter_col), use_container_width=True)
 
-        st.markdown(f"<div class='yellow-box'>🔎 Matching Results for <strong>{col}</strong>: {', '.join(map(str, selected_vals))}</div>", unsafe_allow_html=True)
-        st.dataframe(filtered_df[[col] + [c for c in filtered_df.columns if c != col]], use_container_width=True)
+        selected_val = st.selectbox(f"Select a value from '{filter_col}' to filter:", options=sorted(unique_vals))
+        if selected_val:
+            filtered_df = df[df[filter_col] == selected_val]
+            st.markdown(f"<div class='yellow-box'>🔍 Showing all data for <strong>{filter_col} = {selected_val}</strong></div>", unsafe_allow_html=True)
+            st.dataframe(filtered_df, use_container_width=True)
 
 
 
