@@ -239,6 +239,10 @@ def main():
         if selected_vals:
             filtered_df = filtered_df[filtered_df[col].isin(selected_vals)]
 
+        st.markdown(f"<div class='yellow-box'>🔎 Matching Results for <strong>{col}</strong>: {', '.join(map(str, selected_vals))}</div>", unsafe_allow_html=True)
+        st.dataframe(filtered_df[[col] + [c for c in filtered_df.columns if c != col]], use_container_width=True)
+
+
 
 
     
